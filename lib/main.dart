@@ -63,8 +63,9 @@ class _MyAppState extends State<MyApp> {
       home: Scaffold(
         floatingActionButton: FloatingActionButton(
           child: Icon(Icons.refresh),
-          onPressed: (){
-            InAppBrowser.openWithSystemBrowser(url: Uri.parse('http://192.168.4.1/confDownload.html'));
+          onPressed: () {
+            InAppBrowser.openWithSystemBrowser(
+                url: Uri.parse('http://192.168.4.1/downloadFile.html'));
           },
         ),
         appBar: AppBar(
@@ -72,65 +73,67 @@ class _MyAppState extends State<MyApp> {
         ),
         body: Column(children: <Widget>[
           Expanded(
-          child: InAppWebView(
-        key: GlobalKey(),
-        initialUrlRequest: URLRequest(
-            url: Uri.parse('http://192.168.4.1/confDownload.html')),
-        // initialHeaders: {},
-        initialOptions: InAppWebViewGroupOptions(
-          android: AndroidInAppWebViewOptions(
-            useHybridComposition: true,
-            geolocationEnabled: true,
-            disableDefaultErrorPage: false,
-            // useHybridComposition: true,
-            supportMultipleWindows: false,
-            cacheMode: AndroidCacheMode.LOAD_DEFAULT,
-          ),
-          crossPlatform: InAppWebViewOptions(
+              child: InAppWebView(
+            key: GlobalKey(),
+            initialUrlRequest: URLRequest(
+                url: Uri.parse('http://192.168.4.1/downloadFile.html')),
+            // initialHeaders: {},
+            initialOptions: InAppWebViewGroupOptions(
+              android: AndroidInAppWebViewOptions(
+                safeBrowsingEnabled: false,
+                useHybridComposition: true,
+                geolocationEnabled: true,
+                disableDefaultErrorPage: false,
+                // useHybridComposition: true,
+                supportMultipleWindows: false,
+                cacheMode: AndroidCacheMode.LOAD_DEFAULT,
+              ),
+              crossPlatform: InAppWebViewOptions(
+                clearCache: true,
+                javaScriptEnabled: true,
+                javaScriptCanOpenWindowsAutomatically: true,
+                useOnDownloadStart: true,
+                useShouldOverrideUrlLoading: true,
+                mediaPlaybackRequiresUserGesture: false,
+                horizontalScrollBarEnabled: false,
+                allowFileAccessFromFileURLs: true,
+              ),
+            ),
+            onWebViewCreated: (controller) {
+              webView = controller;
+            },
+            onLoadStart: (_, __) async {
+              print('----> On Load Start');
+            },
+            onLoadStop: (_, __) {
+              print('----> On Load Stop');
+            },
 
-            clearCache: true,
-            javaScriptEnabled: true,
-            useOnDownloadStart: true,
-            useShouldOverrideUrlLoading: true,
-            mediaPlaybackRequiresUserGesture: false,
-            horizontalScrollBarEnabled: false,
-          ),
-        ),
-        onWebViewCreated: (controller) {
-          webView = controller;
-        },
-        onLoadStart: (_, __) async {
-          print('---->');
-        },
-        onLoadStop: (_, __) {
-          // FlutterNativeSplash.remove();
-        },
-
-        onDownloadStartRequest: (controller, url) async {
-          var hasStoragePermission = await Permission.storage.isGranted;
-          if (!hasStoragePermission) {
-            final status = await Permission.storage.request();
-            hasStoragePermission = status.isGranted;
-          }
-          print("onDownloadStart $url");
-          final taskId = await FlutterDownloader.enqueue(
-            /*headers: {
+            onDownloadStartRequest: (controller, url) async {
+              var hasStoragePermission = await Permission.storage.isGranted;
+              if (!hasStoragePermission) {
+                final status = await Permission.storage.request();
+                hasStoragePermission = status.isGranted;
+              }
+              print("onDownloadStart $url");
+              final taskId = await FlutterDownloader.enqueue(
+                headers: {
               HttpHeaders.connectionHeader: 'keep-alive',
               'Content-Disposition':
                   'Content-Disposition: attachment; filename=prueba.txt'
-            },*/
-            fileName: 'prueba.txt',
-            url: url.toString(),
-            savedDir: (await getExternalStorageDirectory())!.path,
-            timeout: 300000,
-            showNotification: true,
-            saveInPublicStorage: true,
+            },
+                fileName: 'prueba.txt',
+                url: url.toString(),
+                savedDir: (await getExternalStorageDirectory())!.path,
+                timeout: 300000,
+                showNotification: true,
+                saveInPublicStorage: true,
 
-            // show download progress in status bar (for Android)
-            openFileFromNotification:
-                true, // click on notification to open downloaded file (for Android)
-          );
-        },
+                // show download progress in status bar (for Android)
+                openFileFromNotification:
+                    true, // click on notification to open downloaded file (for Android)
+              );
+            },
           ))
         ]),
       ),
