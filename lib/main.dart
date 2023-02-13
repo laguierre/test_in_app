@@ -61,12 +61,40 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        floatingActionButton: FloatingActionButton(
-          child: Icon(Icons.refresh),
-          onPressed: () {
-            InAppBrowser.openWithSystemBrowser(
-                url: Uri.parse('http://192.168.4.1/downloadFile.html'));
-          },
+        floatingActionButton: Row(
+          children: [
+            Spacer(),
+            FloatingActionButton(
+              child: Icon(Icons.refresh),
+              onPressed: () {
+                InAppBrowser.openWithSystemBrowser(
+                    url: Uri.parse('http://192.168.4.1/downloadFile.html'));
+              },
+            ),
+            SizedBox(width: 30),
+            FloatingActionButton(
+              child: const Icon(Icons.download),
+              onPressed: () async {
+                final taskId = await FlutterDownloader.enqueue(
+                    headers: {
+                      HttpHeaders.connectionHeader: 'keep-alive',
+                      'Content-Disposition':
+                      'Content-Disposition: attachment; filename=prueba.txt'
+                    },
+                    fileName: 'prueba.txt',
+                    url: 'http://192.168.4.1/downloadFile.html',
+                    savedDir: (await getExternalStorageDirectory())!.path,
+                timeout: 300000,
+                showNotification: true,
+                saveInPublicStorage: true,
+
+                // show download progress in status bar (for Android)
+                openFileFromNotification:
+                true, // click on notification to open downloaded file (for Android)
+                );
+              },
+            ),
+          ],
         ),
         appBar: AppBar(
           title: const Text('InAppWebView Example'),
