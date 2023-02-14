@@ -3,8 +3,10 @@ import 'dart:io';
 import 'dart:isolate';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
+import 'package:flutter_js/flutter_js.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -25,12 +27,16 @@ class DownloadClass {
   static void callback(String id, DownloadTaskStatus status, int progress) {
     print('Download Status: $status');
     print('Download Progress: $progress');
+    final SendPort send =
+        IsolateNameServer.lookupPortByName('downloader_send_port')!;
+    send.send([id, status, progress]);
   }
 }
 
 class _MyAppState extends State<MyApp> {
   InAppWebViewController? webView;
   final ReceivePort _port = ReceivePort();
+  final JavascriptRuntime jsRuntime = getJavascriptRuntime();
 
   @override
   void initState() {
@@ -43,27 +49,6 @@ class _MyAppState extends State<MyApp> {
       int progress = data[2];
       setState(() {});
     });
-
-    /* IsolateNameServer.registerPortWithName(
-        ReceivePort().sendPort, 'downloader_send_port');
-    ReceivePort().listen((dynamic data) {
-      String id = data[0];
-      DownloadTaskStatus status = data[1];
-      int progress = data[2];
-      if (kDebugMode) {
-        print("Download progress: $progress%");
-      }
-      if (status == DownloadTaskStatus.complete) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text("Download $id completed!"),
-        ));
-      }
-    });
-    FlutterDownloader.registerCallback((id, status, progress) {
-      final SendPort? send =
-          IsolateNameServer.lookupPortByName('downloader_send_port');
-      send?.send([id, status, progress]);
-    });*/
   }
 
   @override
@@ -77,6 +62,24 @@ class _MyAppState extends State<MyApp> {
       home: Scaffold(
         floatingActionButton: Row(
           children: [
+            const SizedBox(width: 30),
+            FloatingActionButton(
+              child: const Icon(Icons.sim_card_download),
+              onPressed: () async {
+                try {
+                  String blocJs =
+                      await rootBundle.loadString('lib/js/downloadFile.js');
+                  //print(blocJs);
+                  int limInf = 10, limSup = 100;
+                  final jsResult = jsRuntime.evaluate(
+                      blocJs + """sendToDownload($limInf, $limSup)""");
+
+                  print(jsResult);
+                } on PlatformException catch (e) {
+                  print('Error JS: ${e.details}');
+                }
+              },
+            ),
             const Spacer(),
             FloatingActionButton(
               child: const Icon(Icons.refresh),
@@ -98,23 +101,27 @@ class _MyAppState extends State<MyApp> {
                 if (!Directory("${dir!.path}/RAW").existsSync()) {
                   Directory("${dir!.path}/RAW").createSync(recursive: true);
                 }
-                final taskId = await FlutterDownloader.enqueue(
-                  url: 'http://192.168.4.1/downloadFile.html',
-                  //url : "https://firebasestorage.googleapis.com/v0/b/storage-3cff8.appspot.com/o/2020-05-29%2007-18-34.mp4?alt=media&token=841fffde-2b83-430c-87c3-2d2fd658fd41",
-                  headers: {
+                try {
+                  final taskId = await FlutterDownloader.enqueue(
+                    url: 'http://192.168.4.1/downloadFile.html',
+                    //url : "https://firebasestorage.googleapis.com/v0/b/storage-3cff8.appspot.com/o/2020-05-29%2007-18-34.mp4?alt=media&token=841fffde-2b83-430c-87c3-2d2fd658fd41",
+                    /*headers: {
                     HttpHeaders.connectionHeader: 'keep-alive',
                     'Content-Disposition':
                         'Content-Disposition: attachment; filename=prueba.txt'
-                  },
-                  fileName: 'prueba.txt',
-                  savedDir: dir.path,
-                  //timeout: 300000,
-                  showNotification: true,
-                  //saveInPublicStorage: true,
-                  // show download progress in status bar (for Android)
-                  openFileFromNotification:
-                      false, // click on notification to open downloaded file (for Android)
-                );
+                  },*/
+                    fileName: 'prueba.txt',
+                    savedDir: dir.path,
+                    //timeout: 300000,
+                    showNotification: true,
+                    //saveInPublicStorage: true,
+                    // show download progress in status bar (for Android)
+                    openFileFromNotification:
+                        false, // click on notification to open downloaded file (for Android)
+                  );
+                } catch (e) {
+                  print("---->Error: $e");
+                }
               },
             ),
           ],
