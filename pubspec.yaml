@@ -40,6 +40,7 @@ dependencies:
   flutter_inappwebview: ^5.7.2+3
   flutter_downloader: ^1.10.1+2
   permission_handler: ^10.2.0
+  url_launcher: ^6.1.9
 
 dev_dependencies:
   flutter_test:
