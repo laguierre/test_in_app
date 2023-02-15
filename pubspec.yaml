@@ -42,6 +42,8 @@ dependencies:
   permission_handler: ^10.2.0
   url_launcher: ^6.1.9
   flutter_js: ^0.6.0
+  universal_html: ^2.0.8
+  flutter_file_downloader: ^1.1.0+1
 
 dev_dependencies:
   flutter_test:

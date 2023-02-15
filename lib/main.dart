@@ -1,14 +1,17 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_file_downloader/flutter_file_downloader.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:flutter_js/flutter_js.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:universal_html/html.dart' as html;
 
 Future main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,7 +31,7 @@ class DownloadClass {
     print('Download Status: $status');
     print('Download Progress: $progress');
     final SendPort send =
-        IsolateNameServer.lookupPortByName('downloader_send_port')!;
+    IsolateNameServer.lookupPortByName('downloader_send_port')!;
     send.send([id, status, progress]);
   }
 }
@@ -66,18 +69,59 @@ class _MyAppState extends State<MyApp> {
             FloatingActionButton(
               child: const Icon(Icons.sim_card_download),
               onPressed: () async {
-                try {
+                /*await FileDownloader.downloadFile(
+                    url: 'http://192.168.4.1/downloadFile.html',//"http://192.168.4.1/download.html?inf=100&sup=200",
+                    name: "Prueba",
+                    onDownloadCompleted: (path) {
+                      print(path);
+                      final File file = File(path);
+                      print(file);
+                      //This will be the path of the downloaded file
+                    });*/
+
+                //String url = 'http://192.168.4.1/download.html?inf=100&sup=200';
+                Uri url = Uri(
+                    scheme: 'http',
+                    path: '192.168.4.1/download.html',
+                    queryParameters: {
+                      'inf': '0',
+                      'sup': '100',
+                    });
+                // html.window.open(url, '_blank');
+
+                //final bytes = utf8.encode(text);
+                //final blob = html.Blob([bytes]);
+                //final url = html.Url.createObjectUrlFromBlob(blob);
+                final anchor = html.document.createElement('a')
+                as html.AnchorElement
+                  ..href = "http://192.168.4.1/download.html?inf=100&sup=200"
+                  ..style.display = "none"
+                  ..download = "some_name.txt"
+                  ..innerHtml = "pepe";
+
+
+                print(anchor.toString());
+                var a = anchor.toString();
+                html.document.body!.innerHtml = anchor.innerText;
+                print('----->Edu said ${html.document.body}');
+
+                anchor.click();
+                print('--->Click');
+                html.document.body?.children.remove(anchor);
+                html.Url.revokeObjectUrl(
+                    'http://192.168.4.1/download.html?inf=100&sup=200');
+
+                /*try {
                   String blocJs =
                       await rootBundle.loadString('lib/js/downloadFile.js');
-                  //print(blocJs);
+                  print(blocJs);
                   int limInf = 10, limSup = 100;
-                  final jsResult = jsRuntime.evaluate(
-                      blocJs + """sendToDownload($limInf, $limSup)""");
-
+                  final jsResult = jsRuntime.evaluate("""${blocJs}sendToDownload($limInf, $limSup)""");
+                  //final jsResult = jsRuntime.evaluate("""${blocJs}sendToDownload()""");
                   print(jsResult);
                 } on PlatformException catch (e) {
                   print('Error JS: ${e.details}');
-                }
+                }*/
               },
             ),
             const Spacer(),
@@ -85,7 +129,8 @@ class _MyAppState extends State<MyApp> {
               child: const Icon(Icons.refresh),
               onPressed: () {
                 InAppBrowser.openWithSystemBrowser(
-                    url: Uri.parse('http://192.168.4.1/downloadFile.html'));
+                    url: Uri.parse(
+                        'http://192.168.4.1/confDownload.html')); //Uri.parse('http://192.168.4.1/downloadFile.html'));http://192.168.4.1/download.html?inf=' + limInf +'&sup=' limSup)
               },
             ),
             const SizedBox(width: 30),
@@ -103,13 +148,12 @@ class _MyAppState extends State<MyApp> {
                 }
                 try {
                   final taskId = await FlutterDownloader.enqueue(
-                    url: 'http://192.168.4.1/downloadFile.html',
+                    url: 'http://192.168.4.1/download.html?inf=100&sup=200',
                     //url : "https://firebasestorage.googleapis.com/v0/b/storage-3cff8.appspot.com/o/2020-05-29%2007-18-34.mp4?alt=media&token=841fffde-2b83-430c-87c3-2d2fd658fd41",
-                    /*headers: {
-                    HttpHeaders.connectionHeader: 'keep-alive',
-                    'Content-Disposition':
-                        'Content-Disposition: attachment; filename=prueba.txt'
-                  },*/
+                    headers: {
+                      HttpHeaders.connectionHeader: 'keep-alive',
+                      'Content-Disposition': 'attachment; filename=prueba.txt'
+                    },
                     fileName: 'prueba.txt',
                     savedDir: dir.path,
                     //timeout: 300000,
@@ -117,7 +161,7 @@ class _MyAppState extends State<MyApp> {
                     //saveInPublicStorage: true,
                     // show download progress in status bar (for Android)
                     openFileFromNotification:
-                        false, // click on notification to open downloaded file (for Android)
+                    false, // click on notification to open downloaded file (for Android)
                   );
                 } catch (e) {
                   print("---->Error: $e");
