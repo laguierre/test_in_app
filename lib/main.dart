@@ -31,7 +31,7 @@ class DownloadClass {
     print('Download Status: $status');
     print('Download Progress: $progress');
     final SendPort send =
-    IsolateNameServer.lookupPortByName('downloader_send_port')!;
+        IsolateNameServer.lookupPortByName('downloader_send_port')!;
     send.send([id, status, progress]);
   }
 }
@@ -69,6 +69,15 @@ class _MyAppState extends State<MyApp> {
             FloatingActionButton(
               child: const Icon(Icons.sim_card_download),
               onPressed: () async {
+                var hasStoragePermission = await Permission.storage.isGranted;
+                if (!hasStoragePermission) {
+                  final status = await Permission.storage.request();
+                  hasStoragePermission = status.isGranted;
+                }
+                var dir = await getExternalStorageDirectory();
+                if (!Directory("${dir!.path}/RAW").existsSync()) {
+                  Directory("${dir!.path}/RAW").createSync(recursive: true);
+                }
                 /*await FileDownloader.downloadFile(
                     url: 'http://192.168.4.1/downloadFile.html',//"http://192.168.4.1/download.html?inf=100&sup=200",
                     name: "Prueba",
@@ -87,25 +96,24 @@ class _MyAppState extends State<MyApp> {
                       'inf': '0',
                       'sup': '100',
                     });
-                // html.window.open(url, '_blank');
+                print('URL: $url');
 
-                //final bytes = utf8.encode(text);
-                //final blob = html.Blob([bytes]);
-                //final url = html.Url.createObjectUrlFromBlob(blob);
-                final anchor = html.document.createElement('a')
-                as html.AnchorElement
-                  ..href = "http://192.168.4.1/download.html?inf=100&sup=200"
-                  ..style.display = "none"
-                  ..download = "some_name.txt"
-                  ..innerHtml = "pepe";
-
+                final anchor =
+                    html.document.createElement('a') as html.AnchorElement
+                      ..href = 'http://192.168.4.1/download.html?inf=0&sup=0'
+                      ..style.display = "none"
+                      ..download = 'http://192.168.4.1/download.html?inf=0&sup=0'
+                      //..target = '_blank'
+                      ..click();
 
                 print(anchor.toString());
-                var a = anchor.toString();
+                /*
+                print(html.document.body!.children);
                 html.document.body!.innerHtml = anchor.innerText;
                 print('----->Edu said ${html.document.body}');
 
                 anchor.click();
+                */
                 print('--->Click');
                 html.document.body?.children.remove(anchor);
                 html.Url.revokeObjectUrl(
@@ -161,7 +169,7 @@ class _MyAppState extends State<MyApp> {
                     //saveInPublicStorage: true,
                     // show download progress in status bar (for Android)
                     openFileFromNotification:
-                    false, // click on notification to open downloaded file (for Android)
+                        false, // click on notification to open downloaded file (for Android)
                   );
                 } catch (e) {
                   print("---->Error: $e");
