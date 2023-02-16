@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:ui';
@@ -40,6 +39,7 @@ class _MyAppState extends State<MyApp> {
   InAppWebViewController? webView;
   final ReceivePort _port = ReceivePort();
   final JavascriptRuntime jsRuntime = getJavascriptRuntime();
+  InAppWebViewController? _webViewPopupController;
 
   @override
   void initState() {
@@ -67,7 +67,10 @@ class _MyAppState extends State<MyApp> {
           children: [
             const SizedBox(width: 30),
             FloatingActionButton(
-              child: const Icon(Icons.sim_card_download),
+              foregroundColor: Colors.red,
+              child: const Icon(
+                Icons.sim_card_download,
+              ),
               onPressed: () async {
                 var hasStoragePermission = await Permission.storage.isGranted;
                 if (!hasStoragePermission) {
@@ -98,26 +101,45 @@ class _MyAppState extends State<MyApp> {
                     });
                 print('URL: $url');
 
-                final anchor =
+                /*final anchor =
                     html.document.createElement('a') as html.AnchorElement
-                      ..href = 'http://192.168.4.1/download.html?inf=0&sup=0'
+                      ..href =
+                          a
                       ..style.display = "none"
-                      ..download = 'http://192.168.4.1/download.html?inf=0&sup=0'
-                      //..target = '_blank'
-                      ..click();
+                      ..download = 'file.txt'
+                      ..target = '_blank';
 
-                print(anchor.toString());
-                /*
-                print(html.document.body!.children);
-                html.document.body!.innerHtml = anchor.innerText;
+
+                print(anchor.toString());*/
+
+                final div = html.DivElement();
+                var link = html.document.createElement("a")
+                  ..setAttribute('href', "google.com.ar")
+                  ..classes.add("greeting")
+                  ..setAttribute('download', 'pepe.txt')
+                  ..setAttribute('target', '_blank')
+                  ..appendText("");
+                div.append(link);
+                link.click();
+                div.remove();
+
+                // Print outer HTML
+                print(div.outerHtml);
+                // --> <div><h1>Hello world</h1></div>
+
+                // Do a CSS query
+                //print(div.querySelector("div > .greeting")!.text);
+                // --> Hello world
+
+                /*print(anchor.innerText);
+                html.document.body!.innerHtml = anchor.innerText;*/
                 print('----->Edu said ${html.document.body}');
 
-                anchor.click();
-                */
+                /*anchor.click();
                 print('--->Click');
                 html.document.body?.children.remove(anchor);
                 html.Url.revokeObjectUrl(
-                    'http://192.168.4.1/download.html?inf=100&sup=200');
+                    'http://192.168.4.1/download.html?inf=100&sup=200');*/
 
                 /*try {
                   String blocJs =
@@ -182,31 +204,49 @@ class _MyAppState extends State<MyApp> {
           title: const Text('InAppWebView Example'),
         ),
         body: Column(children: <Widget>[
-          /*Expanded(
+          Expanded(
               child: InAppWebView(
+            initialData: InAppWebViewInitialData(data: """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Flutter InAppWebView</title>
+</head>
+<body>
+  <a style="margin: 50px; background: #333; color: #fff; font-weight: bold; font-size: 20px; padding: 15px; display: block;"
+    href="https://github.com/flutter"
+    target="_blank">
+    Click here to open https://github.com/flutter in a popup!
+  </a>
+</body>
+</html>
+"""),
             key: GlobalKey(),
             initialUrlRequest: URLRequest(
                 url: Uri.parse('http://192.168.4.1/confDownload.html')),
             // initialHeaders: {},
             initialOptions: InAppWebViewGroupOptions(
               android: AndroidInAppWebViewOptions(
-                safeBrowsingEnabled: false,
+                /*safeBrowsingEnabled: false,
                 useHybridComposition: true,
                 geolocationEnabled: true,
-                disableDefaultErrorPage: false,
+                 cacheMode: AndroidCacheMode.LOAD_DEFAULT,
+                disableDefaultErrorPage: false,*/
                 // useHybridComposition: true,
-                supportMultipleWindows: false,
-                cacheMode: AndroidCacheMode.LOAD_DEFAULT,
+                supportMultipleWindows: true,
               ),
               crossPlatform: InAppWebViewOptions(
-                clearCache: true,
-                javaScriptEnabled: true,
+                //clearCache: true,
+                //javaScriptEnabled: true,
                 javaScriptCanOpenWindowsAutomatically: true,
-                useOnDownloadStart: true,
+                /*useOnDownloadStart: true,
                 useShouldOverrideUrlLoading: true,
                 mediaPlaybackRequiresUserGesture: false,
                 horizontalScrollBarEnabled: false,
-                allowFileAccessFromFileURLs: true,
+                allowFileAccessFromFileURLs: true,*/
               ),
             ),
             onWebViewCreated: (controller) {
@@ -218,7 +258,43 @@ class _MyAppState extends State<MyApp> {
             onLoadStop: (_, __) {
               print('----> On Load Stop');
             },
+            onCreateWindow: (controller, createWindowRequest) async {
+              print("onCreateWindow");
 
+              showDialog(
+                context: context,
+                builder: (context) {
+                  return AlertDialog(
+                    content: Container(
+                      width: MediaQuery.of(context).size.width,
+                      height: 400,
+                      child: InAppWebView(
+                        // Setting the windowId property is important here!
+                        windowId: createWindowRequest.windowId,
+                        initialOptions: InAppWebViewGroupOptions(
+                          crossPlatform: InAppWebViewOptions(
+                              //debuggingEnabled: true,
+                              ),
+                        ),
+                        onWebViewCreated: (InAppWebViewController controller) {
+                          _webViewPopupController = controller;
+                        },
+                        onLoadStart:
+                            (InAppWebViewController controller, Uri? url) {
+                          print("onLoadStart popup $url");
+                        },
+                        onLoadStop:
+                            (InAppWebViewController controller, Uri? url) {
+                          print("onLoadStop popup $url");
+                        },
+                      ),
+                    ),
+                  );
+                },
+              );
+
+              return true;
+            },
             onDownloadStartRequest: (controller, url) async {
               var hasStoragePermission = await Permission.storage.isGranted;
               if (!hasStoragePermission) {
@@ -244,7 +320,7 @@ class _MyAppState extends State<MyApp> {
                     true, // click on notification to open downloaded file (for Android)
               );
             },
-          ))*/
+          ))
         ]),
       ),
     );
