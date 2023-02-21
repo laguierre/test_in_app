@@ -13,7 +13,7 @@
         android:icon="@mipmap/ic_launcher"
         android:label="test_in_app"
         android:usesCleartextTraffic="true">
-
+        android:requestLegacyExternalStorage="true"
 
         <provider
             android:name="vn.hunghd.flutterdownloader.DownloadedFileProvider"
