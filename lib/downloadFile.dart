@@ -3,6 +3,7 @@ import 'dart:isolate';
 import 'dart:ui';
 import 'package:lecle_downloads_path_provider/lecle_downloads_path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:universal_html/html.dart' as html;
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -33,7 +34,7 @@ class _DownloadFileState extends State<DownloadFile> {
   final JavascriptRuntime jsRuntime = getJavascriptRuntime();
   InAppWebViewController? _webViewPopupController;
 
-  void showAlertDialog() async {
+  void showAlertDialog(String file) async {
     showDialog(
         context: context,
         builder: (BuildContext context) {
@@ -41,6 +42,20 @@ class _DownloadFileState extends State<DownloadFile> {
             title: const Text('Archivo descargado'),
             content: const Text(''),
             actions: [
+
+          ElevatedButton(
+          style:
+          ElevatedButton.styleFrom(backgroundColor: Colors.green),
+          onPressed: () async {
+            if(await File(file).exists()){
+            Share.shareXFiles([XFile(file)], text: 'Archivo descargado');
+            }
+          },
+          child: const Text('Compartir')),
+
+
+
+
               ElevatedButton(
                   style:
                       ElevatedButton.styleFrom(backgroundColor: Colors.green),
@@ -48,7 +63,6 @@ class _DownloadFileState extends State<DownloadFile> {
                     Navigator.pop(context);
                   },
                   child: const Text('Ok')),
-
             ],
           );
         });
@@ -85,7 +99,8 @@ class _DownloadFileState extends State<DownloadFile> {
                   CheckPermision();
                   final Dio _dio = Dio();
                   var dir = await getApplicationDocumentsDirectory();
-                  String? downloadsDirectoryPath = (await DownloadsPath.downloadsDirectory())?.path;
+                  String? downloadsDirectoryPath =
+                      (await DownloadsPath.downloadsDirectory())?.path;
                   print(downloadsDirectoryPath);
 
                   print(dir.absolute);
@@ -94,10 +109,12 @@ class _DownloadFileState extends State<DownloadFile> {
                     'http://192.168.4.1/downloadFile.html',
                     //'${dir.path}/raw/test.raw',
                     '$downloadsDirectoryPath/11.raw',
-                    onReceiveProgress: (received, total) {
+                    onReceiveProgress: (received, total) async {
                       if (total != -1) {
                         print(
-                            (received / total * 100).toStringAsFixed(0) + "%");showAlertDialog();
+                            (received / total * 100).toStringAsFixed(0) + "%");
+                        showAlertDialog('$downloadsDirectoryPath/11.raw');
+
                       }
                     },
                   );
