@@ -42,20 +42,16 @@ class _DownloadFileState extends State<DownloadFile> {
             title: const Text('Archivo descargado'),
             content: const Text(''),
             actions: [
-
-          ElevatedButton(
-          style:
-          ElevatedButton.styleFrom(backgroundColor: Colors.green),
-          onPressed: () async {
-            if(await File(file).exists()){
-            Share.shareXFiles([XFile(file)], text: 'Archivo descargado');
-            }
-          },
-          child: const Text('Compartir')),
-
-
-
-
+              ElevatedButton(
+                  style:
+                      ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                  onPressed: () async {
+                    if (await File(file).exists()) {
+                      Share.shareXFiles([XFile(file)],
+                          text: 'Archivo descargado');
+                    }
+                  },
+                  child: const Text('Compartir')),
               ElevatedButton(
                   style:
                       ElevatedButton.styleFrom(backgroundColor: Colors.green),
@@ -114,7 +110,6 @@ class _DownloadFileState extends State<DownloadFile> {
                         print(
                             (received / total * 100).toStringAsFixed(0) + "%");
                         showAlertDialog('$downloadsDirectoryPath/11.raw');
-
                       }
                     },
                   );
